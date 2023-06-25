@@ -5,62 +5,39 @@ describe("Patanjali scraper", () => {
     return false;
   });
 
-  it("Get all the parent urls", () => {
-      const parentUrls = [];
-      cy.visit("https://www.patanjaliayurved.net/category/digestives/138");
-      cy.get("div.categorytree>ul>li>ul>li>a").each(($a) => {
-          cy.wrap($a).invoke("attr", "href").then((parentUrl) => {
-              parentUrls.push({url: parentUrl});
-          });
-      }).then(() => {
-        cy.log(parentUrls);
-        cy.writeFile("cypress/fixtures/parentUrls.json",
-          JSON.stringify(parentUrls, null, 2),
-          { encoding: "utf-8", flag: "w", fixture: true });
-      });
-  });
-
-  it("Get all the child urls", () => {
-    const childUrls = [];
-    cy.fixture("parentUrls").then((parentUrls) => {
-      parentUrls.forEach((parentUrl) => {
-        cy.visit(parentUrl);
-        cy.get('div#gridview>div>article>figure>a.figure-href').each(($a) => {
-            cy.wrap($a).invoke('attr', 'href').then((childUrl) => {
-                childUrls.push({url: childUrl});
+    it("Get all the parent urls", () => {
+        const parentUrls = [];
+        cy.visit("https://www.patanjaliayurved.net/category/digestives/138");
+        cy.get("div.categorytree>ul>li>ul>li>a").each(($a) => {
+            cy.wrap($a).invoke("attr", "href").then((parentUrl) => {
+                parentUrls.push({url: parentUrl});
             });
-        })
-        // cy.get('div#gridview').then(($div) => {
-        //     const childElements=$div.find('div>article>figure>a.figure-href');
-        //     if(childElements?.length>0) {
-        //         childElements.each(($a) => {
-        //             $a
-        //             cy.wrap($a).invoke('attr', 'href').then((childUrl) => {
-        //                 childUrls.push({url: childUrl});
-        //             });
-        //         });
-        //     }})
-
-        // cy.get("div#gridview>div>article>figure>a.figure-href").then(($elements) => {
-        //     if ($elements.length > 0) {
-        //       $elements.each(($a) => {
-        //         cy.wrap($a).invoke("attr", "href").then((childUrl) => {
-        //             childUrls.push({ url: childUrl });
-        //           });
-        //       });
-        //     }
-        //   })
-        .then(() => {
-            cy.log(childUrls);
-            cy.writeFile("cypress/fixtures/childUrls.json",
-              JSON.stringify(childUrls, null, 2),
-              { encoding: "utf-8", flag: "w", fixture: true }
-            );
-          });
+        }).then(() => {
+            cy.writeFixtureFile('parentUrls',parentUrls); 
         });
     });
-  });
 
+    it("Get all the child urls", () => {
+        cy.fixture("parentUrls").then((parentUrls) => {
+            parentUrls.forEach((parentUrl) => {
+                cy.visit(parentUrl);
+                const childUrls = [];
+                let heading='';
+                cy.get('div.col-md-9.col-sm-9.col-xs-12.filter-sidebar-box-right>div>h1>span')
+                    .invoke('text').then(text => {
+                        heading=text;
+                });
+                cy.get('div#gridview>div>article>figure>a.figure-href').each(($a) => {
+                    cy.wrap($a).invoke('attr', 'href').then((childUrl) => {
+                        childUrls.push({parentUrl: parentUrl, childUrl: childUrl});
+                    });
+                })
+                .then(() => {
+                    cy.writeFixtureFile(`childUrls-${heading}`,childUrls); 
+                });
+            })
+        });
+    });
   // it("Get all the details from detail page", () => {
 
   //     const productDetails = [];
